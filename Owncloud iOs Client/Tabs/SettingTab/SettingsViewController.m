@@ -74,13 +74,13 @@
 
 - (void)viewDidLoad{
     [super viewDidLoad];
-    
+
     [self.navigationBar setTintColor:[UIColor colorOfNavigationItems]];
 }
 
 
 -(UIStatusBarStyle)preferredStatusBarStyle {
-    
+
     if (k_is_text_status_bar_white) {
         return UIStatusBarStyleLightContent;
     } else {
@@ -116,9 +116,9 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    
+
     self.title = NSLocalizedString(@"settings", nil);
-    
+
     [self.view setBackgroundColor:[UIColor groupTableViewBackgroundColor]];
 
     [InstantUpload instantUploadManager].delegate = self;
@@ -127,26 +127,26 @@
 - (void)viewDidUnload
 {
     [super viewDidUnload];
-    
+
 }
 
 - (void)viewWillAppear:(BOOL)animated{
     [super viewWillAppear:animated];
-    
+
     self.edgesForExtendedLayout = UIRectEdgeAll;
     self.extendedLayoutIncludesOpaqueBars = true;
     self.automaticallyAdjustsScrollViewInsets = true;
 
     AppDelegate *app = (AppDelegate *)[[UIApplication sharedApplication]delegate];
-    
+
     //Relaunch the uploads that failed before
     [app performSelector:@selector(relaunchUploadsFailedNoForced) withObject:nil afterDelay:5.0];
 
     self.user = app.activeUser;
-    
+
     self.listUsers = [ManageUsersDB getAllUsers];
     [self.settingsTableView reloadData];
-    
+
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updatesWhenEnteringForegroundMode) name:UIApplicationDidBecomeActiveNotification object:nil];
 
 }
@@ -158,7 +158,7 @@
 
 -(void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    
+
 }
 
 -(void)viewDidLayoutSubviews
@@ -166,11 +166,11 @@
     if ([self.settingsTableView respondsToSelector:@selector(setSeparatorInset:)]) {
         [self.settingsTableView setSeparatorInset:UIEdgeInsetsMake(0, 10, 0, 0)];
     }
-    
+
     if ([self.settingsTableView respondsToSelector:@selector(setLayoutMargins:)]) {
         [self.settingsTableView setLayoutMargins:UIEdgeInsetsZero];
     }
-    
+
     if (!IS_IOS11) {
         CGRect rect = self.navigationController.navigationBar.frame;
         float y = rect.size.height + rect.origin.y;
@@ -207,16 +207,16 @@
  * This method is calle que the pass code switch change
  *
  * @param id -> UISwitch sender
- 
+
  * @return IBAction
  *
  */
 -(IBAction)changeSwitchPasscode:(id)sender {
-    
+
     //Create pass code view controller
     self.vc = [[KKPasscodeViewController alloc] initWithNibName:nil bundle:nil];
     self.vc.delegate = self;
-    
+
     //Create the navigation bar of portrait
     OCPortraitNavigationViewController *oc = [[OCPortraitNavigationViewController alloc]initWithRootViewController:_vc];
 
@@ -226,7 +226,7 @@
     } else {
         self.vc.mode = KKPasscodeModeSet;
     }
-    
+
     if (IS_IPHONE) {
         //is iphone
         [self presentViewController:oc animated:YES completion:nil];
@@ -236,7 +236,7 @@
         oc.modalPresentationStyle = UIModalPresentationFormSheet;
         [app.splitViewController presentViewController:oc animated:YES completion:nil];
     }
-    
+
     [self.settingsTableView reloadData];
 
 }
@@ -245,7 +245,7 @@
  * This method is called when the touch ID swicth changes
  *
  * @param id -> UISwitch sender
- 
+
  * @return IBAction
  *
  */
@@ -258,18 +258,18 @@
     AppDelegate *app = (AppDelegate *)[[UIApplication sharedApplication]delegate];
 
     [[ManageThumbnails sharedManager] deleteThumbnailCacheFolderOfUserId: APP_DELEGATE.activeUser.userId];
-    
+
     [ManageUsersDB removeUserAndDataByUser:APP_DELEGATE.activeUser];
-    
+
     [UtilsFramework deleteAllCookies];
-    
+
     DLog(@"ID to delete user: %ld", (long)app.activeUser.userId);
-    
+
     //Delete files os user in the system
     NSString *userFolder = [NSString stringWithFormat:@"/%ld", (long)app.activeUser.userId];
     NSString *path= [[UtilsUrls getOwnCloudFilePath] stringByAppendingPathComponent:userFolder];
-    
-    NSError *error;     
+
+    NSError *error;
     [[NSFileManager defaultManager] removeItemAtPath:path error:&error];
     [self performSelectorInBackground:@selector(cancelAllDownloads) withObject:nil];
     app.uploadArray=[[NSMutableArray alloc]init];
@@ -279,12 +279,12 @@
 
 
 -(void)goImprint {
-   
+
     if(k_impressum_is_file) {
         ImpressumViewController *viewController = [[ImpressumViewController alloc]initWithNibName:@"ImpressumViewController" bundle:nil];
-        
+
         OCNavigationController *navBar=[[OCNavigationController alloc]initWithRootViewController:viewController];
-        
+
         // only for iPad
         if (!IS_IPHONE) {
             navBar.modalTransitionStyle=UIModalTransitionStyleCoverVertical;
@@ -294,10 +294,10 @@
     } else {
         if (IS_IPHONE) {
             WebViewController *webView=[[WebViewController alloc]initWithNibName:@"WebViewController" bundle:nil];
-            
+
             webView.urlString = k_impressum_url;
             webView.navigationTitleString = NSLocalizedString(@"imprint_button", nil);
-            
+
             [self.navigationController pushViewController:webView animated:NO];
 
         } else {
@@ -315,7 +315,7 @@
 
 // Asks the data source to return the number of sections in the table view.
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    
+
     return 5;
 }
 
@@ -323,17 +323,17 @@
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
     NSInteger n = 0;
-    
+
     switch (section) {
         case 0:
-            
+
             if (k_multiaccount_available) {
                 n = self.listUsers.count;
             }else{
                 n = 1;
             }
             break;
-            
+
         case 1:
             if (k_multiaccount_available) {
                 n = 1;
@@ -341,7 +341,7 @@
                 n = 0;
             }
             break;
-            
+
         case 2:
             if ((self.switchPasscode.on || k_is_passcode_forced) && [self isTouchIDAvailable]) {
                 n = 2;
@@ -349,7 +349,7 @@
                 n = 1;
             }
             break;
-            
+
         case 3:
             if ([[InstantUpload instantUploadManager] imageInstantUploadEnabled] || [[InstantUpload instantUploadManager] videoInstantUploadEnabled]) {
                 n = 3;
@@ -371,11 +371,11 @@
                 n = n + 1;
             }
             break;
-            
+
         default:
             break;
     }
-    
+
     return n;
 }
 
@@ -384,11 +384,11 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     static NSString *CellIdentifier = @"SettingsCell";
-    
+
     UITableViewCell *cell;
-    
+
     cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:CellIdentifier];
-    
+
     switch (indexPath.section) {
         case 0:
             cell = [self getSectionManageAccountBlock:cell byRow:indexPath.row];
@@ -410,12 +410,12 @@
         case 4:
             [self getSectionInfoBlock:cell byRow:indexPath.row];
             break;
-            
+
         default:
             break;
     }
-    
-    
+
+
     return cell;
 }
 
@@ -426,7 +426,7 @@
     container.backgroundColor = [UIColor clearColor];
     UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, self.settingsTableView.frame.size.width, k_padding_last_section)];
     UIFont *appFont = [UIFont fontWithName:@"HelveticaNeue" size:13];
-    
+
     NSInteger sectionToShowFooter = 4;
 
     if (section == sectionToShowFooter) {
@@ -442,22 +442,22 @@
         label.backgroundColor = [UIColor clearColor];
         label.text = @"";
     }
-    
+
     [container addSubview:label];
-    
+
     return container;
 }
 
 
 -(CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section{
-    
+
     CGFloat height = 0;
-    
+
     switch (section) {
         case 0:
             height = k_padding_normal_section * 2;
             break;
-            
+
         case 1:
             if (k_multiaccount_available) {
                 height = k_padding_under_section;
@@ -465,19 +465,19 @@
                 height = 0;
             }
             break;
-            
+
         default:
             height = k_padding_normal_section;
             break;
     }
-    
+
     return height;
 }
 
 -(CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section{
-    
+
     CGFloat height = 0;
-    
+
     switch (section) {
         case 0:
             if (k_multiaccount_available) {
@@ -486,7 +486,7 @@
                 height = k_padding_normal_section;
             }
             break;
-            
+
         case 1:
             if (k_multiaccount_available) {
                 height = k_padding_normal_section;
@@ -494,28 +494,28 @@
                 height = 0;
             }
             break;
-            
+
         case 4:
             height = k_padding_last_section + self.tabBarController.tabBar.frame.size.height;
             break;
-            
+
         default:
             height = k_padding_normal_section;
             break;
     }
-    
+
     return height;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section{
-    
+
     NSString *title = nil;
-    
+
     switch (section) {
         case 0:
             title = NSLocalizedString(@"accounts_section", nil);
             break;
-            
+
         case 2:
             title = NSLocalizedString(@"security_section", nil);
             break;
@@ -529,7 +529,7 @@
         default:
             break;
     }
-    
+
     return title;
 }
 
@@ -548,7 +548,7 @@
                 [self setTitleOfRow:impress inCell:cell];
             }
             break;
-            
+
         case 1:
             if (k_show_help_option_on_settings && k_show_recommend_option_on_settings) {
                  [self setTitleOfRow:recommend inCell:cell];
@@ -563,7 +563,7 @@
                  [self setTitleOfRow:impress inCell:cell];
             }
             break;
-            
+
         case 2:
             if (k_show_help_option_on_settings && k_show_recommend_option_on_settings && k_show_feedback_option_on_settings) {
                 [self setTitleOfRow:feedback inCell:cell];
@@ -571,11 +571,11 @@
                 [self setTitleOfRow:impress inCell:cell];
             }
             break;
-            
+
         case 3:
             [self setTitleOfRow:impress inCell:cell];
             break;
-            
+
         default:
             break;
     }
@@ -595,48 +595,48 @@
  *
  */
 - (void) setTitleOfRow: (NSInteger)row inCell: (UITableViewCell *)cell{
-    
+
     cell.textLabel.font = k_settings_normal_font;
-    
+
     switch (row) {
-            
+
         case help:
             cell.selectionStyle = UITableViewCellSelectionStyleBlue;
             cell.textLabel.text = NSLocalizedString(@"help", nil);
             [cell setAccessoryType:UITableViewCellAccessoryDisclosureIndicator];
-            
-            
+
+
             //Add accesibility label for Automation
             cell.accessibilityLabel = ACS_SETTINGS_HELP_CELL;
             break;
-            
+
         case recommend:
             cell.selectionStyle = UITableViewCellSelectionStyleBlue;
             cell.textLabel.text = NSLocalizedString(@"recommend_to_friend", nil);
             [cell setAccessoryType:UITableViewCellAccessoryDisclosureIndicator];
-            
+
             //Add accesibility label for Automation
             cell.accessibilityLabel = ACS_SETTINGS_RECOMMEND_CELL;
             break;
-            
+
         case feedback:
             cell.selectionStyle = UITableViewCellSelectionStyleBlue;
             cell.textLabel.text = NSLocalizedString(@"send_feedback", nil);
             [cell setAccessoryType:UITableViewCellAccessoryDisclosureIndicator];
-            
+
             //Add accesibility label for Automation
             cell.accessibilityLabel = ACS_SETTINGS_SEND_FEEDBACK_CELL;
             break;
-            
+
         case impress:
             cell.selectionStyle = UITableViewCellSelectionStyleBlue;
             cell.textLabel.text = NSLocalizedString(@"imprint_button", nil);
             [cell setAccessoryType:UITableViewCellAccessoryDisclosureIndicator];
-            
+
             //Add accesibility label for Automation
             cell.accessibilityLabel = ACS_SETTINGS_IMPRESS_CELL;
             break;
-            
+
         default:
             break;
     }
@@ -644,47 +644,47 @@
 
 
 - (UITableViewCell *) getSectionStorageBlock:(UITableViewCell *) cell byRow:(int) row {
-    
+
     UIFont *appFont = [UIFont fontWithName:@"HelveticaNeue-Bold" size:15];
-    
+
     switch (row) {
         case 0:
-            
+
             cell.selectionStyle = UITableViewCellSelectionStyleBlue;
             cell.textLabel.text = NSLocalizedString(@"Storage", nil);
-            
+
             NSInteger percent = 0;
             if(self.user.storage > 0) {
                 percent = (self.user.storageOccupied * 100)/self.user.storage;
             }
-                        
+
             cell.detailTextLabel.text=[NSString stringWithFormat:@"%ld%% %@ %ldMB %@", (long)percent, NSLocalizedString(@"of_storage", nil), self.user.storage, NSLocalizedString(@"occupied_storage", nil)];
-            
+
             [cell.detailTextLabel setFont:appFont];
             [cell.detailTextLabel setTextColor:[UIColor colorOfDetailTextSettings]];
-            
+
             break;
         case 1:
             cell.selectionStyle = UITableViewCellSelectionStyleBlue;
             cell.textLabel.text = NSLocalizedString(@"storage_upgrade", nil);
             [cell setAccessoryType:UITableViewCellAccessoryDisclosureIndicator];
-            
+
             break;
-            
+
         default:
             break;
     }
-    
+
     return cell;
 }
 
 - (UITableViewCell *) getSectionAppPinBlock:(UITableViewCell *) cell byRow:(NSInteger) row {
-   
+
     cell.textLabel.font = k_settings_normal_font;
-    
+
     switch (row) {
         case 0:
-            
+
             if (k_is_passcode_forced) {
 
                 cell.textLabel.text = NSLocalizedString(@"title_app_pin_forced", nil);
@@ -698,7 +698,7 @@
 
             } else {
                 if([self isTouchIDAvailable] && !self.switchPasscode.on) {
-                    
+
                     if ([[ManageTouchID sharedSingleton] isDeviceFaceIDCompatible]) {
                         cell.textLabel.text = NSLocalizedString(@"title_app_pin_and_faceID", nil);
                     } else {
@@ -715,13 +715,13 @@
                 //Add accesibility label for Automation
                 self.switchPasscode.accessibilityLabel = ACS_SETTINGS_PASSCODE_SWITCH;
             }
-            
 
-            
+
+
             break;
-            
+
         case 1:
-            
+
             if ([[ManageTouchID sharedSingleton] isDeviceFaceIDCompatible]) {
                 cell.textLabel.text = NSLocalizedString(@"title_app_faceID", nil);
             } else {
@@ -732,23 +732,23 @@
             [self.switchTouchID setOn:[ManageAppSettingsDB isTouchID] animated:YES];
             [self.switchTouchID addTarget:self action:@selector(changeSwitchTouchID:) forControlEvents:UIControlEventValueChanged];
             [cell setSelectionStyle:UITableViewCellSelectionStyleNone];
-            
+
             //Add accesibility label for Automation
             self.switchTouchID.accessibilityLabel = ACS_SETTINGS_TOUCH_ID_SWITCH;
-            
+
             break;
-            
+
         default:
             break;
     }
-    
+
     return cell;
 }
 
 -(UITableViewCell *) getSectionAppInstantUpload:(UITableViewCell *) cell byRow:(NSInteger) row {
-    
+
     cell.textLabel.font = k_settings_normal_font;
-    
+
     switch (row) {
         case 0:
             cell.textLabel.text = NSLocalizedString(@"title_instant_upload_photos", nil);
@@ -758,7 +758,7 @@
             [self.switchInstantUploadPhotos addTarget:self action:@selector(changeSwitchImageInstantUpload:) forControlEvents:UIControlEventValueChanged];
             [cell setSelectionStyle:UITableViewCellSelectionStyleNone];
             self.switchInstantUploadPhotos.accessibilityLabel = ACS_SETTINGS_INSTANT_UPLOAD_PHOTOS_SWITCH;
-            
+
             break;
         case 1:
             cell.textLabel.text = NSLocalizedString(@"title_instant_upload_videos", nil);
@@ -768,16 +768,16 @@
             [self.switchInstantUploadVideos addTarget:self action:@selector(changeSwitchVideoInstantUpload:) forControlEvents:UIControlEventValueChanged];
             [cell setSelectionStyle:UITableViewCellSelectionStyleNone];
             self.switchInstantUploadVideos.accessibilityLabel = ACS_SETTINGS_INSTANT_UPLOAD_VIDEOS_SWITCH;
-            
+
             break;
         case 2:
             cell.textLabel.text = NSLocalizedString(@"title_background_instant_upload", nil);
-            
+
             self.switchBackgroundInstantUpload = [[UISwitch alloc] initWithFrame:CGRectZero];
             cell.accessoryView = self.switchBackgroundInstantUpload;
-            
+
             [self.switchBackgroundInstantUpload setOn:[[InstantUpload instantUploadManager] backgroundInstantUploadEnabled] animated:YES];
-            
+
             [self.switchBackgroundInstantUpload addTarget:self action:@selector(changeSwitchBackgroundInstantUpload:) forControlEvents:UIControlEventValueChanged];
             [cell setSelectionStyle:UITableViewCellSelectionStyleNone];
             self.switchBackgroundInstantUpload.accessibilityLabel = ACS_SETTINGS_BACKGROUND_INSTANT_UPLOADS_SWITCH;
@@ -785,22 +785,22 @@
         default:
             break;
     }
-    
+
     return cell;
 }
 
 
 - (AccountCell *) getSectionManageAccountBlock:(UITableViewCell *) cell byRow:(NSInteger) row {
-    
+
     static NSString *CellIdentifier = @"AccountCell";
-    
+
     AccountCell *accountCell = (AccountCell *) [self.settingsTableView dequeueReusableCellWithIdentifier:CellIdentifier];
     UserDto *userAccount = [self.listUsers objectAtIndex:row];
-    
+
     if (accountCell == nil) {
-        
+
         NSArray *topLevelObjects = [[NSBundle mainBundle] loadNibNamed:@"AccountCell" owner:self options:nil];
-        
+
         for (id currentObject in topLevelObjects){
             if ([currentObject isKindOfClass:[UITableViewCell class]]){
                 accountCell =  (AccountCell *) currentObject;
@@ -808,37 +808,37 @@
             }
         }
     }
-    
+
     [accountCell.activeButton setTag:row];
-    
+
     accountCell.selectionStyle = UITableViewCellSelectionStyleNone;
     accountCell.userName.text = [userAccount nameToDisplay];
-    
+
     //If saml needs change the name to utf8
     if (k_is_sso_active) {
         accountCell.userName.text = [accountCell.userName.text stringByRemovingPercentEncoding];
     }
-    
+
     if ([UtilsUrls isNecessaryUpdateToPredefinedUrlByPreviousUrl:userAccount.predefinedUrl]) {
         accountCell.urlServer.text = NSLocalizedString(@"pending_migration_to_new_url", nil);
         accountCell.urlServer.textColor = [UIColor colorOfLoginErrorText];
     } else {
         accountCell.urlServer.text = userAccount.url;
     }
-    
+
     [cell setSelectionStyle:UITableViewCellSelectionStyleNone];
     [accountCell.menuButton setTag:row];
     [accountCell.menuButton setImage:[UIImage imageNamed:@"more-filledBlack.png"] forState:UIControlStateNormal];
     [accountCell.menuButton addTarget:self action:@selector(showMenuAccountOptions:) forControlEvents:UIControlEventTouchUpInside];
 
-    
+
     if(((UserDto *) [self.listUsers objectAtIndex:row]).activeaccount){
         [accountCell.activeButton setImage:[UIImage imageNamed:@"radio_checked.png"] forState:UIControlStateNormal];
-        
+
     }else {
         [accountCell.activeButton setImage:[UIImage imageNamed:@"radio_unchecked.png"] forState:UIControlStateNormal];
     }
-    
+
     //Accesibility support for Automation
     if (accountCell.userName.text != nil && accountCell.urlServer.text != nil) {
 
@@ -847,20 +847,20 @@
         accesibilityCellString = [accesibilityCellString stringByReplacingOccurrencesOfString:@"$server" withString:accountCell.urlServer.text];
         [accountCell setAccessibilityLabel:accesibilityCellString];
     }
-        
+
     return accountCell;
-    
+
 }
 
 
 - (UITableViewCell *) getSectionAddAccountButton:(UITableViewCell *) cell byRow:(NSInteger) row {
-    
+
     static NSString *CellIdentifier = @"AddAccountCell";
-    
+
     UITableViewCell *addAccountCell;
-    
+
     addAccountCell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
-    
+
     addAccountCell.selectionStyle = UITableViewCellSelectionStyleBlue;
     addAccountCell.textLabel.font = k_settings_bold_font;
     addAccountCell.textLabel.textAlignment = NSTextAlignmentCenter;
@@ -868,10 +868,10 @@
     addAccountCell.textLabel.text = NSLocalizedString(@"add_new_account", nil);
     addAccountCell.backgroundColor = [UIColor colorOfBackgroundButtonOnList];
     addAccountCell.textLabel.textColor = [UIColor colorOfTextButtonOnList];
-    
+
     //Accesibility support for Automation
     addAccountCell.accessibilityLabel = ACS_SETTINGS_ADD_ACCOUNT_CELL;
-    
+
     return addAccountCell;
 }
 
@@ -880,32 +880,32 @@
 
 // Tells the delegate that the specified row is now selected.
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
-{   
+{
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
-    
+
     switch (indexPath.section) {
         case 0:
             if (k_multiaccount_available) {
                 [self didPressOnAccountIndexPath:indexPath];
             }
             break;
-            
+
         case 1:
             if (k_multiaccount_available) {
                 [self didPressOnAddAccountButton];
             }
             break;
-            
+
         case 2:
             if (k_is_passcode_forced) {
                 [self didPressOnChangePasscodeButton];
             }
             break;
-            
+
         case 4:
             [self didPressOnInfoBlock:indexPath.row];
             break;
-            
+
         default:
             break;
     }
@@ -993,10 +993,10 @@
             if (IS_IPHONE) {
                 DLog(@"2.1-Press Help");
                 WebViewController *webView = [[WebViewController alloc]initWithNibName:@"WebViewController" bundle:nil];
-                
+
                 webView.urlString = k_help_url;
                 webView.navigationTitleString = NSLocalizedString(@"help", nil);
-                
+
                 [self.navigationController pushViewController:webView animated:NO];
 
             } else {
@@ -1009,21 +1009,21 @@
                 self.detailViewController.linkTitle=NSLocalizedString(@"help", nil);
             }
             break;
-            
+
         case recommend:
         {
-            
+
             if (IS_IPHONE && (!IS_PORTRAIT)) {
-                
+
                 UIAlertView *alertView = [[UIAlertView alloc]initWithTitle:nil
                                                                    message:NSLocalizedString(@"not_show_potrait", nil)
                                                                   delegate:nil
                                                          cancelButtonTitle:nil
                                                          otherButtonTitles:NSLocalizedString(@"ok",nil), nil];
                 [alertView show];
-                
+
             } else {
-                
+
                 if (self.popupQuery) {
                     self.popupQuery = nil;
                 }
@@ -1032,10 +1032,10 @@
                                                      cancelButtonTitle:NSLocalizedString(@"cancel", nil)
                                                 destructiveButtonTitle:nil
                                                      otherButtonTitles:@"Facebook", @"Twitter", @"E-Mail", nil];
-                
+
                 self.popupQuery.actionSheetStyle = UIActionSheetStyleDefault;
                 self.popupQuery.tag = k_tag_actionSheet_recommend;
-                
+
                 if (IS_IPHONE) {
                     [self.popupQuery showInView:[self.view window]];
                 }else {
@@ -1045,7 +1045,7 @@
             }
         }
             break;
-            
+
         case feedback:
             [self sendFeedbackByMail];
             break;
@@ -1058,17 +1058,17 @@
 }
 
 - (void) didPressOnAddAccountButton{
-   
+
     AppDelegate *app = (AppDelegate *)[[UIApplication sharedApplication]delegate];
 
     UniversalLoginViewController *loginViewController = [UtilsLogin getLoginVCWithMode:LoginModeCreate andUser:nil];
-    
+
     if (IS_IPHONE)
     {
         OCNavigationController *navController = [[OCNavigationController alloc] initWithRootViewController:loginViewController];
         [self.navigationController presentViewController:navController animated:YES completion:nil];
     } else {
-        
+
         OCNavigationController *navController = [[OCNavigationController alloc] initWithRootViewController:loginViewController];
         navController.modalPresentationStyle = UIModalPresentationFormSheet;
         [app.splitViewController presentViewController:navController animated:YES completion:nil];
@@ -1077,16 +1077,16 @@
 }
 
 - (void) didPressOnChangePasscodeButton{
-    
+
     //Create pass code view controller
     self.vc = [[KKPasscodeViewController alloc] initWithNibName:nil bundle:nil];
     self.vc.delegate = self;
-    
+
     //Create the navigation bar of portrait
     OCPortraitNavigationViewController *oc = [[OCPortraitNavigationViewController alloc]initWithRootViewController:_vc];
-    
+
     self.vc.mode = KKPasscodeModeChange;
-    
+
     if (IS_IPHONE) {
         //is iphone
         [self presentViewController:oc animated:YES completion:nil];
@@ -1096,32 +1096,32 @@
         oc.modalPresentationStyle = UIModalPresentationFormSheet;
         [app.splitViewController presentViewController:oc animated:YES completion:nil];
     }
-    
+
     [self.settingsTableView reloadData];
 
 }
 
 - (void) didPressOnAccountIndexPath:(NSIndexPath*)indexPath {
-    
+
     AppDelegate *app = (AppDelegate *)[[UIApplication sharedApplication]delegate];
     UserDto *selectedUser = (UserDto *)[self.listUsers objectAtIndex:indexPath.row];
 
     //Method to change the account
     [[OCLoadingSpinner sharedOCLoadingSpinner] initLoadingForViewController: self];
-    
+
     [UtilsCookies saveActiveUserCookiesAndRestoreCookiesOfUser:selectedUser];
-    
+
     [app switchActiveUserTo:selectedUser isNewAccount:NO];
     DLog(@"refreshing list of accounts after user was switched");
-        
+
     [[OCLoadingSpinner sharedOCLoadingSpinner] endLoading];
-    
+
     //If ipad, clean the detail view
     if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
         AppDelegate *app = (AppDelegate *)[[UIApplication sharedApplication]delegate];
         [app presentWithView];
     }
-    
+
     [self refreshTable];
 }
 
@@ -1147,37 +1147,37 @@
  */
 
 - (void) cancelAndRemoveFromTabRecentsAllInfoByUser:(UserDto *) selectedUser {
-    
+
     //1- - We cancell all the downloads
     AppDelegate *appDelegate = (AppDelegate*)[[UIApplication sharedApplication] delegate];
-    
+
     //Create an array with the data of all uploads
     __block NSArray *uploadsArray = [NSArray arrayWithArray:appDelegate.uploadArray];
-    
+
     //Var to use the current ManageUploadRequest
     __block ManageUploadRequest *currentManageUploadRequest = nil;
-    
-    
+
+
     //Make a loop for all objects of uploadsArray.
     [uploadsArray enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         currentManageUploadRequest = obj;
-        
+
         if (currentManageUploadRequest.userUploading.userId == selectedUser.userId) {
             [currentManageUploadRequest cancelUpload];
         }
-        
+
         //2- Clean the recent view
         if ([uploadsArray count] == idx) {
-            
+
             DLog(@"All canceled. Now we clean the view");
-            
+
             AppDelegate *app = (AppDelegate *)[[UIApplication sharedApplication]delegate];
-            
+
             //Remove from Recents tab all the info of this user
             [app removeFromTabRecentsAllInfoByUser:selectedUser];
         }
     }];
-    
+
 }
 
 
@@ -1187,19 +1187,19 @@
     //Cancel downloads in ipad
     AppDelegate *appDelegate = (AppDelegate *)[[UIApplication sharedApplication]delegate];
     [appDelegate.downloadManager cancelDownloads];
-    
+
     [[AppDelegate sharedSyncFolderManager] cancelAllDownloads];
 }
 
 - (NSMutableArray *) getUsersWithoutActiveUser {
     NSMutableArray *listOfUsersWithouActive = [NSMutableArray new];
-    
+
     for (UserDto *current in self.listUsers) {
         if (!current.activeaccount) {
             [listOfUsersWithouActive addObject:current];
         }
     }
-    
+
     return listOfUsersWithouActive;
 }
 
@@ -1209,7 +1209,7 @@
 - (void)actionSheet:(UIActionSheet *)actionSheet didDismissWithButtonIndex:(NSInteger)buttonIndex {
 
     if (actionSheet.tag == k_tag_actionSheet_recommend) {
-        
+
         switch (buttonIndex) {
             case 0:
                 DLog(@"Facebook");
@@ -1249,7 +1249,7 @@
 -(void) publishTwitter {
     // Singleton instance
     self.twitter = [SLComposeViewController composeViewControllerForServiceType:SLServiceTypeTwitter];
-    
+
     // Check that twitter is available
     if ([SLComposeViewController isAvailableForServiceType:SLServiceTypeTwitter])
     {
@@ -1269,33 +1269,33 @@
             self.isMailComposeVisible = NO;
             [self dismissViewControllerAnimated:YES completion:nil];
         };
-        
+
         //Custom message
         if (k_is_custom_twitter) {
             // Add the text to the publish
             NSString *message = k_custom_twitter_message;
             [self.twitter setInitialText:message];
-            
+
         } else {
             // Add the text to the publish with the URL
             [self.twitter setInitialText:[NSString stringWithFormat:@"%@%@",[NSLocalizedString(@"twitter_message", nil) stringByReplacingOccurrencesOfString:@"$twitteruser" withString:k_twitter_user],k_download_url_short]];
         }
-        
+
         // Add an image to the publish
         [self.twitter addImage:[UIImage imageNamed:@"CompanyLogo.png"]];
-        
+
         [self.twitter setCompletionHandler:completionHandler];
-        
+
         if (!IS_IPHONE)
         {
             AppDelegate *app = (AppDelegate *)[[UIApplication sharedApplication]delegate];
             [app.detailViewController presentViewController:self.twitter animated:YES completion:^{
                 self.isMailComposeVisible = YES;
             }];
-            
-            
+
+
         } else{
-            
+
             [self presentViewController:self.twitter animated:YES completion:^{
                 self.isMailComposeVisible = YES;
             }];
@@ -1313,9 +1313,9 @@
 
 
 -(void) publishFacebook {
-    
+
     self.facebook = [SLComposeViewController composeViewControllerForServiceType:SLServiceTypeFacebook];
-    
+
     if ([SLComposeViewController isAvailableForServiceType:SLServiceTypeFacebook]) {
         SLComposeViewControllerCompletionHandler completionHandler = ^(SLComposeViewControllerResult result)
         {
@@ -1332,33 +1332,33 @@
              self.isMailComposeVisible = NO;
             [self dismissViewControllerAnimated:YES completion:nil];
         };
-        
+
         if(k_is_custom_facebook) {
             [self.facebook setInitialText:k_custom_facebook_message];
         } else {
             NSString *appName = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleDisplayName"];
             [self.facebook setInitialText:[NSString stringWithFormat: @"%@%@",[NSLocalizedString(@"facebook_message", nil) stringByReplacingOccurrencesOfString:@"$appname" withString:appName],k_download_url_long]];
         }
-        
+
         [self.facebook addImage:[UIImage imageNamed:@"CompanyLogo.png"]];
         [self.facebook setCompletionHandler:completionHandler];
-        
+
         if (!IS_IPHONE)
         {
             AppDelegate *app = (AppDelegate *)[[UIApplication sharedApplication]delegate];
             [app.detailViewController presentViewController:self.facebook animated:YES completion:^{
                 self.isMailComposeVisible = YES;
             }];
-            
-            
+
+
         } else{
             [self presentViewController:self.facebook animated:YES completion:^{
                 self.isMailComposeVisible = YES;
             }];
         }
-        
+
     } else {
-        
+
         UIAlertView *alertView = [[UIAlertView alloc]
                                   initWithTitle:@""
                                   message:NSLocalizedString(@"account_not_configure", nil)
@@ -1370,20 +1370,20 @@
 }
 
 -(void) sendRecommendacionByMail {
-    
+
     NSString *appName = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleDisplayName"];
     if ([MFMailComposeViewController canSendMail]) {
-        
+
         if (self.mailer) {
             self.mailer = nil;
         }
-        
+
         self.mailer = [[MFMailComposeViewController alloc] init];
-        
+
         self.mailer.mailComposeDelegate = self;
-        
+
         [self.mailer.navigationBar setTintColor:[UIColor colorOfNavigationItems]];
-        
+
         if(k_is_custom_recommend_mail) {
             if (k_is_username_recommend_mail) {
                 NSString *subject= k_subject_recommend_mail;
@@ -1403,15 +1403,15 @@
             }else {
                 [self.mailer setSubject:k_subject_recommend_mail];
             }
-            
+
         } else {
             [self.mailer setSubject:[NSLocalizedString(@"mail_recommendation_subject", nil) stringByReplacingOccurrencesOfString:@"$appname" withString:appName]];
         }
-        
+
         UIImage *myImage = [UIImage imageNamed:@"CompanyLogo.png"];
         NSData *imageData = UIImagePNGRepresentation(myImage);
         [self.mailer addAttachmentData:imageData mimeType:@"image/png" fileName:@"logo"];
-        
+
         if(k_is_custom_recommend_mail) {
             if(k_is_sign_custom_usign_username) {
                 [self.mailer setMessageBody:[NSString stringWithFormat:@"%@%@",k_text_recommend_mail,[self.user nameToDisplay]] isHTML:NO];
@@ -1419,31 +1419,31 @@
                 [self.mailer setMessageBody:k_text_recommend_mail isHTML:NO];
             }
         } else {
-            
+
             NSString *emailBody = [NSString stringWithFormat: @"%@\r\n%@",[NSLocalizedString(@"mail_recommendation_body", nil) stringByReplacingOccurrencesOfString:@"$appname" withString:appName],k_download_url_long];
             [self.mailer setMessageBody:emailBody isHTML:NO];
         }
-        
+
         if (!IS_IPHONE)
         {
             self.mailer.modalTransitionStyle=UIModalTransitionStyleCoverVertical;
             self.mailer.modalPresentationStyle = UIModalPresentationFormSheet;
-            
+
             AppDelegate *app = (AppDelegate *)[[UIApplication sharedApplication]delegate];
             [app.detailViewController presentViewController:self.mailer animated:YES completion:^{
                 self.isMailComposeVisible = YES;
             }];
-            
-    
+
+
         } else{
             [self presentViewController:self.mailer animated:YES completion:^{
                 self.isMailComposeVisible = YES;
             }];
         }
 
-        
+
     } else {
-        
+
         UIAlertView *alert = [[UIAlertView alloc] initWithTitle:NSLocalizedString(@"error", nil)
                                                         message:NSLocalizedString(@"device_not_support_mail", nil)
                                                        delegate:nil
@@ -1454,19 +1454,19 @@
 }
 
 -(void) sendFeedbackByMail {
-    
+
     if ([MFMailComposeViewController canSendMail]){
-        
+
         if (self.mailer) {
             self.mailer = nil;
         }
-        
+
         self.mailer = [[MFMailComposeViewController alloc] init];
-        
+
         self.mailer.mailComposeDelegate = self;
-        
+
         [self.mailer.navigationBar setTintColor:[UIColor colorOfNavigationItems]];
-        
+
         NSString *appName = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleDisplayName"];
         NSString *version = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
 
@@ -1474,32 +1474,32 @@
         subject = [subject stringByReplacingOccurrencesOfString:@"$appname" withString:appName];
 
         [self.mailer setSubject:subject];
-        
+
         NSArray *toRecipients = [NSArray arrayWithObjects:k_mail_feedback,nil];
         [self.mailer setToRecipients:toRecipients];
-        
+
         NSString *emailBody = @"";
         [self.mailer setMessageBody:emailBody isHTML:NO];
-        
+
         if (!IS_IPHONE)
         {
             self.mailer.modalTransitionStyle = UIModalTransitionStyleCoverVertical;
             self.mailer.modalPresentationStyle = UIModalPresentationFormSheet;
-            
+
             AppDelegate *app = (AppDelegate *)[[UIApplication sharedApplication]delegate];
             [app.detailViewController presentViewController:self.mailer animated:YES completion:^{
                 self.isMailComposeVisible = YES;
             }];
-            
-            
+
+
         }else{
-            
+
             [self presentViewController:self.mailer animated:YES completion:^{
                 self.isMailComposeVisible = YES;
             }];
 
         }
-        
+
     } else {
         UIAlertView *alert = [[UIAlertView alloc] initWithTitle:NSLocalizedString(@"error", nil)
                                                         message:NSLocalizedString(@"device_not_support_mail", nil)
@@ -1533,21 +1533,21 @@
 			DLog(@"Mail not sent");
 			break;
 	}
-    
+
     if (IS_IPHONE) {
-        
+
          [self dismissViewControllerAnimated:YES completion:^{
               self.isMailComposeVisible = NO;
          }];
-        
+
     }else{
-        
+
         AppDelegate *app = (AppDelegate *)[[UIApplication sharedApplication]delegate];
         [app.detailViewController dismissViewControllerAnimated:YES completion:^{
              self.isMailComposeVisible = NO;
         }];
     }
-   
+
 }
 
 
@@ -1564,7 +1564,7 @@
  *
  */
 - (void)didSettingsChanged:(KKPasscodeViewController*)viewController{
-    
+
     DLog(@"didSettingsChanged");
     [self.switchPasscode setOn:[ManageAppSettingsDB isPasscode] animated:NO];
 
@@ -1579,12 +1579,12 @@
  *
 */
 - (void)didCancelPassCodeTapped{
-    
+
     //Refresh the switch pass code
     [self.switchPasscode setOn:[ManageAppSettingsDB isPasscode] animated:NO];
     [self.settingsTableView reloadData];
 
-    
+
 }
 
 #pragma mark - Touch ID methods
@@ -1598,7 +1598,7 @@
 }
 
 -(void)setPropertiesTouchIDToState:(BOOL)isTocuhIDActive{
-    
+
     if (isTocuhIDActive) {
         [self switchTouchIDTo:YES];
         [ManageAppSettingsDB updateTouchIDTo:YES];
@@ -1612,7 +1612,7 @@
 
 -(IBAction)changeSwitchImageInstantUpload:(id)sender {
     UISwitch *uiSwitch = (UISwitch *)sender;
-    [[InstantUpload instantUploadManager] setImageInstantUploadEnabled:uiSwitch.on];
+    [[InstantUpload instantUploadManager] setImageInstantUploadEnabled:uiSwitch.off];
     [self refreshTable];
 }
 
@@ -1634,26 +1634,26 @@
 
     self.selectedUserAccount = [self.listUsers objectAtIndex:sender.tag];
     NSString *titleMenu = [UtilsUrls getFullRemoteServerPathWithoutProtocolBeginningWithUserDisplayName: self.selectedUserAccount];
-    
-    
+
+
     if (self.menuAccountActionSheet) {
         self.menuAccountActionSheet = nil;
     }
-    
+
     self.menuAccountActionSheet = [[UIActionSheet alloc]
                                    initWithTitle:titleMenu
                                    delegate:self
                                    cancelButtonTitle:NSLocalizedString(@"cancel", nil)
                                    destructiveButtonTitle:nil
                                    otherButtonTitles:NSLocalizedString(@"menu_account_edit", nil), NSLocalizedString(@"menu_account_clear_cache", nil), NSLocalizedString(@"menu_account_log_out", nil), nil];
-    
+
     self.menuAccountActionSheet.actionSheetStyle = UIActionSheetStyleDefault;
     self.menuAccountActionSheet.tag = k_tag_actionSheet_menu_account;
-    
+
     if (IS_IPHONE) {
         [self.menuAccountActionSheet showInView:self.tabBarController.view];
     } else {
-        
+
         AppDelegate *app = (AppDelegate *)[[UIApplication sharedApplication]delegate];
         [self.menuAccountActionSheet showInView:app.splitViewController.view];
     }
@@ -1663,13 +1663,13 @@
 #pragma mark - Options menu account
 
 - (void) didSelectEditAccount:(UserDto *)user  {
-   
+
     UniversalLoginViewController *loginViewController = [UtilsLogin getLoginVCWithMode:LoginModeUpdate andUser:user];
-    
+
     if (IS_IPHONE) {
         OCNavigationController *navController = [[OCNavigationController alloc] initWithRootViewController:loginViewController];
         [self.navigationController presentViewController:navController animated:YES completion:nil];
-        
+
     } else {
         AppDelegate *app = (AppDelegate *)[[UIApplication sharedApplication]delegate];
         OCNavigationController *navController = nil;
@@ -1683,67 +1683,67 @@
 - (void) didSelectClearCacheAccount:(UserDto *)user {
 
     [[OCLoadingSpinner sharedOCLoadingSpinner] initLoadingForViewController: self];
-    
+
     dispatch_async( dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        
+
         void (^deletionBlock)(void) = ^{
-            
+
             [DeleteUtils deleteAllDownloadedFilesByUser:user];
             dispatch_async(dispatch_get_main_queue(), ^{
                 [[OCLoadingSpinner sharedOCLoadingSpinner]  endLoading];
             });
         };
-        
+
         deletionBlock();
-        
+
     });
 }
 
 - (void) didSelectLogOutAccount:(UserDto *)user {
-    
+
     [self performSelectorInBackground:@selector(cancelAllDownloads) withObject:nil];
-    
+
     [[ManageThumbnails sharedManager] deleteThumbnailCacheFolderOfUserId: user.userId];
-    
+
     //Delete the tables of this user
     [ManageUsersDB removeUserAndDataByUser:user];
-    
+
     [self performSelectorInBackground:@selector(cancelAndRemoveFromTabRecentsAllInfoByUser:) withObject:user];
-    
+
     //Delete files of user in the system
     NSString *userFolder = [NSString stringWithFormat:@"/%ld",(long)user.userId];
     NSString *path= [[UtilsUrls getOwnCloudFilePath] stringByAppendingPathComponent:userFolder];
     NSError *error;
     [[NSFileManager defaultManager] removeItemAtPath:path error:&error];
-    
+
     //if previous account is active we active the first by userId
     if(user.activeaccount) {
-        
+
         [ManageUsersDB setActiveAccountAutomatically];
-        
+
         APP_DELEGATE.activeUser = [ManageUsersDB getActiveUser];
-        
+
         [UtilsCookies deleteCurrentSystemCookieStorageAndRestoreTheCookiesOfActiveUser];
-        
+
         [UtilsFileSystem createFolderForUser:APP_DELEGATE.activeUser];
-        
+
         //If ipad, clean the detail view
         if (!IS_IPHONE) {
             AppDelegate *app = (AppDelegate *)[[UIApplication sharedApplication]delegate];
             [app presentWithView];
         }
     }
-    
+
     self.listUsers = [ManageUsersDB getAllUsers];
-    
+
     if([self.listUsers count] > 0) {
         [self.settingsTableView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:NO];
     } else {
-        
+
         self.settingsTableView.editing = NO;
-        
+
         AppDelegate *app = (AppDelegate *)[[UIApplication sharedApplication]delegate];
-        
+
         [self cancelAllDownloads];
         app.uploadArray=[[NSMutableArray alloc]init];
         [app updateRecents];

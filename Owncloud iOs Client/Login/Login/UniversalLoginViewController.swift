@@ -20,15 +20,15 @@ struct K {
     struct segueId {
         static let segueToWebLoginView = "segueToWebLoginView"
     }
-    
+
     struct unwindId {
         static let unwindToMainLoginView = "unwindToMainLoginView"
     }
-    
+
     struct vcId {
         static let vcIdWebViewLogin = "WebViewLoginViewController"
     }
-    
+
     struct constant {
         static let httpsProtocol = "https://"
         static let httpProtocol = "http://"
@@ -54,40 +54,40 @@ public enum TextfieldType: String {
 
 
 @objc public class UniversalLoginViewController: UIViewController, UITextFieldDelegate, SSODelegate {
- 
+
 // MARK: IBOutlets
     @IBOutlet var scrollView: UIScrollView!
-    
+
     @IBOutlet var imageViewLogo: UIImageView!
-    
+
     @IBOutlet weak var viewTopLogo: UIView!
     @IBOutlet var imageViewTopInfo: UIImageView!
     @IBOutlet var labelTopInfo: UILabel!
-    
+
     @IBOutlet var imageViewLeftURL: UIImageView!
     @IBOutlet var textFieldURL: UITextField!
     @IBOutlet var buttonReconnection: UIButton!
-    
+
     @IBOutlet var buttonReconnectionURL: UIButton!
     @IBOutlet var imageViewURLFooter: UIImageView!
     @IBOutlet var labelURLFooter: UILabel!
     @IBOutlet var activityIndicatorURLFooter: UIActivityIndicatorView!
-    
+
     //For Basic and edit account
     @IBOutlet var imageViewUsername: UIImageView!
     @IBOutlet var textFieldUsername: UITextField!
-    
+
     @IBOutlet var imageViewLeftPassword: UIImageView!
     @IBOutlet var textFieldPassword: UITextField!
     @IBOutlet var revealPasswordButton: UIButton!
-    
+
     @IBOutlet var imageViewPasswordFooter: UIImageView!
     @IBOutlet var labelPasswordFooter: UILabel!
-    
+
     @IBOutlet var buttonConnect: UIButton!
     @IBOutlet var buttonHelpLink: UIButton!
-    
-    
+
+
     //StackViews
     @IBOutlet weak var topInfoStackView: UIStackView!
     @IBOutlet weak var urlStackView: UIStackView!
@@ -97,8 +97,8 @@ public enum TextfieldType: String {
     @IBOutlet weak var basicAuthInfoStackView: UIStackView!
     @IBOutlet weak var connectButtonStackView: UIStackView!
     @IBOutlet weak var helpButtonStackView: UIStackView!
-    
-    
+
+
     var validatedServerURL: String!
     var allAvailableAuthMethods = [AuthenticationMethod]()
     var authMethodToLogin: AuthenticationMethod! = .UNKNOWN
@@ -109,64 +109,64 @@ public enum TextfieldType: String {
     var userNewCredentials:OCCredentialsDto = OCCredentialsDto()
     var activeField: UITextField!
     var nextErrorShouldBeShownAfterPasswordField = false;
-    
+
     let serverURLNormalizer: ServerURLNormalizer = ServerURLNormalizer()
     let getPublicInfoFromServerJob: GetPublicInfoFromServerJob = GetPublicInfoFromServerJob()
     var statusBarTintSubview: UIView!
     var topTwentiConstraint: NSLayoutConstraint!
     var forceAccountMigration: Bool = false
-    
+
     private let oAuth2Manager: OCOAuth2Manager = OCOAuth2Manager()
 
-    
+
     public override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         self.topTwentiConstraint = self.scrollView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 0)
         self.topTwentiConstraint.isActive = true
-        
+
         self.forceAccountMigration = false
         self.userNewCredentials = OCCredentialsDto()
-        
+
         viewDidLayoutSubviews()
-        
+
         self.listenNotificationsAboutKeyboard()
         self.manageNetworkErrors = ManageNetworkErrors()
             // using ManageNetworkErrors() without delegate; UniversalLoginViewController will call
             // ManageNetworkErrors.returnErrorMessageWithHttpStatusCode when appropriate, and will show
             // the message without a callback to a delegate method
-        
+
         textFieldURL.delegate = self
         textFieldUsername.delegate = self
         textFieldPassword.delegate = self
-        
-        
+
+
         self.showInitMessageCredentialsErrorIfNeeded()
 
         self.setBrandingStyle()
-        
+
         self.initUI()
-        
+
         self.oAuth2Manager.trustedCertificatesStore = SSLCertificateManager()
-        
+
         if self.loginMode == .update {
             self.setReconnectionButtons(hiddenStatus: true)
             self.setURLFooter(isType: .None)
             self.checkCurrentUrl()
         }
-                
+
         UtilsCookies.saveCurrentOfActiveUserAndClean()    // network requests from log-in view need to be independent of existing sessions
-        
+
         print("Init login with loginMode: \(loginMode.rawValue) (0=Create,1=Update,2=Expire,3=Migrate)")
     }
-    
+
     public override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        
+
         self.removeNotificationsAboutKeyboard()
-        
+
     }
-    
+
     public override func viewDidLayoutSubviews() {
         if self.navigationController == nil {
             if  !UIApplication.shared.isStatusBarHidden {
@@ -179,25 +179,25 @@ public enum TextfieldType: String {
         }
     }
 
-    
+
     public override var preferredStatusBarStyle: UIStatusBarStyle {
         if Customization.kIsTextLoginStatusBarWhite() {
             return .lightContent
         }
         return .default
     }
-    
-    
+
+
     //MARK: Set up credentials error
 
     func showInitMessageCredentialsErrorIfNeeded() {
-    
+
         if self.loginMode == .migrate {
-            
+
             self.setTopInfo(message: "error_updating_predefined_url")
 
         } else if self.loginMode == .expire{
-            
+
             if (Customization.kIsSsoActive()) {
                 self.setTopInfo(message: "session_expired")
             } else {
@@ -205,16 +205,16 @@ public enum TextfieldType: String {
             }
         }
     }
-    
+
     //MARK: Set up image and label with error/info
-    
+
     func setTopInfo(message: String) {
-        
+
         self.labelTopInfo.text = NSLocalizedString(message, comment: "");
-        
+
         self.imageViewTopInfo.image = UIImage(named: "CredentialsError.png")!
     }
-    
+
     func setActivityIndicator(isVisible: Bool) {
         self.imageViewURLFooter.isHidden = isVisible
         if isVisible {
@@ -223,13 +223,13 @@ public enum TextfieldType: String {
             self.activityIndicatorURLFooter.stopAnimating()
         }
     }
-    
+
     private func showURLError(_ message: String!) {
         DispatchQueue.main.async {
             self.setURLFooter(isType: .Error, errorMessage: message)
         }
     }
-    
+
     private func showURLSuccess(_ serverIsSecure: Bool) {
         DispatchQueue.main.async {
             if serverIsSecure {
@@ -239,7 +239,7 @@ public enum TextfieldType: String {
             }
         }
     }
-    
+
     private func showCredentialsError(_ message: String!) {
         DispatchQueue.main.async {
             if (self.basicAuthInfoStackView.isHidden) {
@@ -252,12 +252,12 @@ public enum TextfieldType: String {
             }
         }
     }
-    
+
     private func setURLFooter(isType type: StateCheckedURL, errorMessage: String = "") {
-        
+
         var footerMessage = ""
         self.setActivityIndicator(isVisible: false)
-        
+
         switch type {
 
         case .Error:
@@ -266,81 +266,81 @@ public enum TextfieldType: String {
             self.setReconnectionButtons(hiddenStatus: false)
             self.setConnectButton(status: false)
             return      // beware: return here, break in the rest
-            
+
         case .TestingConnection:
             footerMessage = "testing_connection"
             self.setActivityIndicator(isVisible: true)
             self.setConnectButton(status: false)
 
             break
-            
+
         case .ConnectionEstablishedNonSecure:
             self.imageViewURLFooter.image = UIImage(named: "NonSecureConnectionIcon.png")!
             footerMessage = "connection_established"
             self.setConnectButton(status: true)
 
             break
-            
+
         case .ConnectionEstablishedSecure:
             self.imageViewURLFooter.image = UIImage(named: "SecureConnectionIcon.png")!
             footerMessage = "secure_connection_established"
             self.setConnectButton(status: true)
 
             break
-            
+
         case .None:
             self.imageViewURLFooter.image = nil
             footerMessage = ""
             break
         }
-        
+
         self.labelURLFooter.text = NSLocalizedString(footerMessage, comment: "")
     }
-    
-    
+
+
     func setPasswordFooterError(errorMessage: String) {
-        
+
         self.labelPasswordFooter.text = errorMessage;
-        
+
         self.imageViewPasswordFooter.image = UIImage(named: "CredentialsError.png")!
     }
-    
+
 
     //MARK: Set style
-    
+
     func setBrandingStyle() {
-        
+
         //labels messages
         self.labelTopInfo.backgroundColor = UIColor.clear
         self.labelTopInfo.textColor = UIColor.ofLoginErrorText()
-        
+
         self.labelURLFooter.backgroundColor = UIColor.clear
         self.labelURLFooter.textColor = UIColor.ofLoginErrorText()
-        
+
         self.labelPasswordFooter.backgroundColor = UIColor.clear
         self.labelPasswordFooter.textColor = UIColor.ofLoginErrorText()
-        
+
         //text in text fields
         textFieldURL.textColor = UIColor.ofURLUserPassword()
         textFieldUsername.textColor = UIColor.ofURLUserPassword()
         textFieldPassword.textColor = UIColor.ofURLUserPassword()
-        
+
         //background
         self.scrollView.backgroundColor = UIColor.ofLoginBackground()
         self.imageViewLogo.backgroundColor = UIColor.ofLoginTopBackground()
         self.viewTopLogo.backgroundColor = UIColor.ofLoginTopBackground()
-        
+
     }
-    
+
     func setConnectButton(status: Bool) {
         self.buttonConnect.isEnabled = status
         self.setConnectButtonStyle(isEnabled: status)
     }
-    
+
     private func setConnectButtonStyle(isEnabled: Bool) {
         self.buttonConnect.layer.cornerRadius = self.buttonConnect.layer.bounds.height / 2
         self.buttonConnect.setTitleColor(UIColor.ofLoginButtonText(), for: .normal)
-        
+
       if isEnabled {
             self.buttonConnect.backgroundColor = UIColor.ofLoginButtonBackground()
         } else {
@@ -349,77 +349,77 @@ public enum TextfieldType: String {
 
     }
 
-    
+
     //MARK: UI set up
     func initUI() {
-        
+
         let app: AppDelegate = (UIApplication.shared.delegate as! AppDelegate)
-        
+
         self.hideKeyboardWhenTappedAround()
-        
+
         //set cancel button in navigation bar
         if (  self.loginMode == .update
             || (self.loginMode == .create && (app.activeUser != nil))
             || (Customization.kMultiaccountAvailable() && (self.loginMode == .migrate || self.loginMode == .expire))
             ) {
-            
+
             self.setCancelBarButtonSystemItem()
         }
-        
+
         //set URL status
         if Customization.kHideUrlServer() {
             self.setURLStackView(hiddenStatus: true)
         }
-        
+
         //set username and password fields status (enabled/disabled)
         let enabledEditUrlUsernamePassword : Bool = (self.loginMode == .create || self.loginMode == .migrate)
         self.textFieldURL.isEnabled = enabledEditUrlUsernamePassword
         self.textFieldURL.isUserInteractionEnabled = enabledEditUrlUsernamePassword
         self.textFieldUsername.isEnabled = true
         self.textFieldUsername.isUserInteractionEnabled = true
-        
+
         self.textFieldUsername.autocorrectionType = .no
         self.textFieldURL.autocorrectionType = .no
-        
+
         //set username and password fields visibility
         self.updateInputFieldsFromCurrentAuthMethodToLogin()
-        
+
         //set login button status
         self.setConnectButton(status: false)
-        
+
         //init help link button status
         self.buttonHelpLink.isHidden = Customization.kIsShownHelpLinkOnLogin() ?  false : true
         let buttonHelpTitleWithoutAppName = NSLocalizedString("help_link_login", comment: "")
         let appName = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as! String
         let buttonHelpTitle = buttonHelpTitleWithoutAppName.replacingOccurrences(of: "$appname", with: appName)
         self.buttonHelpLink.setTitle(buttonHelpTitle, for: .normal)
-        
+
         //Placeholders for the login textfields
         self.textFieldURL.placeholder = NSLocalizedString("url_sample", comment: "")
         self.textFieldUsername.placeholder = NSLocalizedString("username", comment: "")
         self.textFieldPassword.placeholder = NSLocalizedString("password", comment: "")
-        
-        
+
+
         //init textField values
-        
+
         self.textFieldURL.text = k_default_url_server
         
         //test
 //        self.loginMode = .expire
 //        self.user?.username = ""
         ////
-        
+
         if self.loginMode != .create {
-            
+
             let noCredentialsAvailable = (self.loginMode == .expire && (self.user?.username == nil || self.user?.username == ""))
-            
+
             if (noCredentialsAvailable) {
-                
+
                 print("Migrating keychain from login view")
                 OCKeychain.waitUntilKindOfCredentialsInAllKeychainItemsAreUpdatedFromDB22to23()
-                
+
                 self.user = ManageUsersDB.getActiveUser()
-                
+
                 if (self.user?.credDto != nil && self.user?.credDto.userName != nil
                     && self.user?.credDto.userName != "") {
                     print("New credentials, update active user")
@@ -428,44 +428,44 @@ public enum TextfieldType: String {
                 } else {
                     print("Can not get credentials from keychain in login view")
                     OCKeychain.removeCredentials(ofUser: self.user)
-                    
+
                     self.forceAccountMigration = true
                 }
             }
-            
+
             self.textFieldUsername.text = self.user?.username
             self.textFieldPassword.text = ""
-            
+
             if self.loginMode != .migrate {
                 self.textFieldURL.text = UtilsUrls.getFullRemoteServerPath(self.user)
             }
         }
-        
+
         //auto launch check of URL
         if self.textFieldURL.text != nil && self.textFieldURL.text != "" {
             self.checkCurrentUrl()
         }
 
     }
-    
+
     func setCancelBarButtonSystemItem() {
-        
+
         let cancelButton = UIBarButtonItem(barButtonSystemItem:UIBarButtonSystemItem.cancel,
                                            target:self,
                                            action:#selector(closeLoginView))
-        
+
         self.navigationItem.leftBarButtonItem = cancelButton
     }
-    
+
     func updateInputFieldsFromCurrentAuthMethodToLogin() {
         let shouldBehiddenUserPassFields = (self.authMethodToLogin == nil || self.authMethodToLogin != AuthenticationMethod.BASIC_HTTP_AUTH);
         self.setBasicAuthLoginStackViews(hiddenStatus: shouldBehiddenUserPassFields)
     }
-    
+
     func setBasicAuthLoginStackViews(hiddenStatus: Bool) {
-        
+
         self.revealPasswordButton.setBackgroundImage(UIImage(named: "RevealPasswordIcon.png"), for: .normal)
-        
+
         UIView.animate(withDuration: 0.5, animations: {
             self.usernameStackView.isHidden = hiddenStatus
             self.passwordStackView.isHidden = hiddenStatus
@@ -476,7 +476,7 @@ public enum TextfieldType: String {
             self.basicAuthInfoStackView.isHidden = hiddenStatus
         })
     }
-    
+
     func updateUIWithNormalizedData(_ oNormalized: ServerURLNormalizer) {
         self.textFieldURL.text = self.validatedServerURL
         if (oNormalized.user != nil) && !(oNormalized.user?.isEmpty)! {
@@ -492,13 +492,13 @@ public enum TextfieldType: String {
     func setURLStackView(hiddenStatus: Bool) {
         self.urlStackView.isHidden = hiddenStatus
     }
-    
+
     func setReconnectionButtonOnURLInfoStackView(hiddenStatus: Bool) {
         UIView.animate(withDuration: 0.5, animations: {
             self.buttonReconnection.isHidden = hiddenStatus
         }, completion: {(_) in })
     }
-    
+
     func setReconnectionButtonOnURLStackView(hiddenStatus: Bool) {
         UIView.animate(withDuration: 0.5, animations: {
             self.buttonReconnectionURL.isHidden = hiddenStatus
@@ -506,13 +506,13 @@ public enum TextfieldType: String {
             self.buttonReconnectionURL.isHidden = hiddenStatus
         })
     }
-    
+
     func setPasswordEyeOnPasswordStackView(hiddenStatus: Bool) {
         UIView.animate(withDuration: 0.5, animations: {
             self.revealPasswordButton.isHidden = hiddenStatus
         }, completion: {(_) in })
     }
-    
+
     func setReconnectionButtons(hiddenStatus: Bool) {
         if Customization.kHideUrlServer() {
             self.setReconnectionButtonOnURLInfoStackView(hiddenStatus: hiddenStatus)
@@ -520,39 +520,39 @@ public enum TextfieldType: String {
             self.setReconnectionButtonOnURLStackView(hiddenStatus: hiddenStatus)
         }
     }
-    
+
     func setNetworkActivityIndicator(status: Bool) {
         UIApplication.shared.isNetworkActivityIndicatorVisible = status
     }
-    
+
     func resetPasswordFooterMessage() {
         self.imageViewPasswordFooter.image = nil
         self.labelPasswordFooter.text = ""
     }
-    
+
     // MARK: dismiss
     @objc func closeLoginView() {
         UtilsCookies.deleteCurrentSystemCookieStorageAndRestoreTheCookiesOfActiveUser()
         self.setNetworkActivityIndicator(status: false)
         self.dismiss(animated: true, completion: nil)
     }
-    
-    
+
+
 // MARK: checkUrl
     func checkCurrentUrl() {
         self.setConnectButton(status: false)
         self.setURLFooter(isType: .TestingConnection)
-        
+
         if let inputURL = textFieldURL.text {
             self.serverURLNormalizer.normalize(serverURL: inputURL)
             self.setNetworkActivityIndicator(status: true)
             // get public infor from server
             getPublicInfoFromServerJob.start(serverURL: self.serverURLNormalizer.normalizedURL, withCompletion: { (validatedURL: String?, _ serverAuthenticationMethods: Array<Any>?, _ error: Error?, _ httpStatusCode: NSInteger) in
-                
+
                 DispatchQueue.main.async {
                     self.setNetworkActivityIndicator(status: false)
                     if (error != nil || validatedURL == nil) {
-                        
+
                         self.setConnectButton(status: false)
                         self.showURLError(
                             self.manageNetworkErrors.returnErrorMessage(
@@ -560,24 +560,24 @@ public enum TextfieldType: String {
                             )
                         )
                         print ("error getting information from URL")
-                        
+
                     } else if (validatedURL != nil && (serverAuthenticationMethods != nil && serverAuthenticationMethods!.count > 0) ) {
-                        
+
                         self.setURLFooter(isType: .None)
-                        
+
                         self.validatedServerURL = validatedURL;
-                        
+
                         self.allAvailableAuthMethods = serverAuthenticationMethods as! [AuthenticationMethod]
-                        
+
                         self.authMethodToLogin = DetectAuthenticationMethod.getAuthMethodToLoginFrom(availableAuthMethods: self.allAvailableAuthMethods)
-                        
+
                         if (self.authMethodToLogin != .NONE) {
                             self.setReconnectionButtons(hiddenStatus: true)
-                            
+
                             if (self.authMethodToLogin == .BASIC_HTTP_AUTH) {
                                 self.textFieldURL.resignFirstResponder()
                                 self.textFieldUsername.becomeFirstResponder()
-                                
+
                                 if self.loginMode == .update {
                                     self.textFieldUsername.text = self.user?.username
                                     self.textFieldPassword.text = ""
@@ -586,9 +586,9 @@ public enum TextfieldType: String {
                                 self.setConnectButton(status: false)
                                 self.startAuthenticationWith(authMethod: self.authMethodToLogin)
                             }
-                            
+
                             self.showURLSuccess(self.validatedServerURL.hasPrefix(K.constant.httpsProtocol))
-                            
+
                         } else {
                             self.setConnectButton(status: false)
                             self.showURLError(NSLocalizedString("authentification_not_valid", comment: ""))
@@ -600,8 +600,8 @@ public enum TextfieldType: String {
             })
         }
     }
-    
-    
+
+
 // MARK: start log in auth
     func startAuthenticationWith(authMethod: AuthenticationMethod) {
         switch authMethod {
@@ -623,24 +623,24 @@ public enum TextfieldType: String {
             self.userNewCredentials.accessToken = self.textFieldPassword.text
             self.userNewCredentials.authenticationMethod = authMethod
             nextErrorShouldBeShownAfterPasswordField = true
-                        
+
             self.detectUserDataAndValidate(serverPath: self.validatedServerURL)
-            
+
             break
 
         default:
             showURLError(NSLocalizedString("authentification_not_valid", comment: ""))
-            
+
         }
 
     }
-    
+
     func navigateToSAMLLoginView() {
 
         //Grant main thread
         DispatchQueue.main.async {
             print("_showSSOLoginScreen_ url: %@", self.validatedServerURL)
-            
+
             //New SSO WebView controller
             let ssoViewController: SSOViewController = SSOViewController(nibName: "SSOViewController", bundle: nil)
             ssoViewController.urlString = self.validatedServerURL
@@ -650,41 +650,41 @@ public enum TextfieldType: String {
             ssoViewController.navigate(from: self)
         }
     }
-    
+
     func navigateToOAuthLoginView() {
         performSegue(withIdentifier: K.segueId.segueToWebLoginView, sender: self)
     }
-    
+
 // MARK: SSODelegate implementation
-    
+
     /**
      * This delegate method is called from SSOViewController when the user successfully logs-in.
      *
      * @param cookieString -> NSString Cookies in last state of the SSO WebView , including SSO cookie & OC session cookie.
      *
      */
-    
+
     public func setCookieForSSO(_ cookieString: String?, serverPath: String?) {
-        
+
         self.setNetworkActivityIndicator(status: false)
-        
+
         self.userNewCredentials =  OCCredentialsDto()
         self.userNewCredentials.accessToken = cookieString;
         self.userNewCredentials.authenticationMethod = .SAML_WEB_SSO;
-        
+
         if cookieString == nil || cookieString == "" {
             self.showCredentialsError(NSLocalizedString("authentification_not_valid", comment: "") )
-            
+
             return;
         }
-        
+
         self.detectUserDataAndValidate(serverPath: serverPath!)
     }
-    
+
 
 // MARK: textField delegate
     public func textFieldDidEndEditing(_ textField: UITextField) {
-        
+
         self.activeField = nil
         switch textField.restorationIdentifier! {
         case TextfieldType.password.rawValue:
@@ -701,16 +701,16 @@ public enum TextfieldType: String {
             break
         }
     }
-    
+
     public func textFieldDidBeginEditing(_ textField: UITextField) {
         self.activeField = textField
         if textField.restorationIdentifier! == TextfieldType.password.rawValue {
             self.setPasswordEyeOnPasswordStackView(hiddenStatus: false)
         }
     }
-    
+
     public func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        
+
         if self.authMethodToLogin != nil && self.authMethodToLogin == .BASIC_HTTP_AUTH {
             if (!self.textFieldUsername.text!.isEmpty) && (!self.textFieldPassword.text!.isEmpty) {
                 self.setConnectButton(status: true)
@@ -718,7 +718,7 @@ public enum TextfieldType: String {
                 self.setConnectButton(status: false)
             }
         }
-        
+
         self.activeField = nil
         switch textField.restorationIdentifier! {
         case TextfieldType.url.rawValue:
@@ -742,35 +742,35 @@ public enum TextfieldType: String {
         return false
     }
 
-    
+
     public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         self.view.endEditing(true)
     }
 
 // MARK: Keyboard
-    
+
     func hideKeyboardWhenTappedAround() {
         let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(UniversalLoginViewController.dismissKeyboard))
         view.addGestureRecognizer(tap)
     }
-    
+
     @objc func dismissKeyboard() {
         view.endEditing(true)
     }
-    
-    
+
+
     //MARK: Keyboard Notifications
-    
+
     func listenNotificationsAboutKeyboard () {
         NotificationCenter.default.addObserver(self, selector: #selector(UniversalLoginViewController.keyboardDidShow(_:)), name: NSNotification.Name.UIKeyboardDidShow, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(UniversalLoginViewController.keyboardWillBeHidden(_:)), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
     }
-    
+
     func removeNotificationsAboutKeyboard () {
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIKeyboardDidShow, object: nil)
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIKeyboardWillHide, object: nil)
     }
-    
+
     @objc func keyboardDidShow(_ notification: Notification) {
         if let activeField = self.activeField, let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
             let contentInsets = UIEdgeInsets(top: 0.0, left: 0.0, bottom: keyboardSize.height + 20, right: 0.0)
@@ -783,58 +783,58 @@ public enum TextfieldType: String {
             }
         }
     }
-    
+
     @objc func keyboardWillBeHidden(_ notification: Notification) {
         let contentInsets = UIEdgeInsets.zero
         self.scrollView.contentInset = contentInsets
         self.scrollView.scrollIndicatorInsets = contentInsets
     }
-    
+
 // MARK: IBActions
     @IBAction func reconnectionButtonTapped(_ sender: Any) {
         self.dismissKeyboard()
         self.checkCurrentUrl()
     }
-    
+
     @IBAction func connectButtonTapped(_ sender: Any) {
         self.view.endEditing(true)
         self.setNetworkActivityIndicator(status: true)
         self.setConnectButton(status: false)    // prevent multiple taps
         self.startAuthenticationWith(authMethod: self.authMethodToLogin)
     }
-    
+
     @IBAction func helpLinkButtonTapped(_ sender: Any) {
         UIApplication.shared.openURL(NSURL(string:  k_url_link_on_login)! as URL)
     }
-    
+
     @IBAction func unwindToMainLoginView(segue:UIStoryboardSegue) {
         if let sourceViewController = segue.source as? WebLoginViewController {
             /// back from web view getting OAuth2 authorization code
-            
+
             let webVC: WebLoginViewController = sourceViewController
             if !(webVC.authCode).isEmpty {
                 self.setNetworkActivityIndicator(status: false)
                 self.authCodeReceived = webVC.authCode
-                
+
                 let app: AppDelegate = (UIApplication.shared.delegate as! AppDelegate)
-                
+
                 self.oAuth2Manager.authData(by: app.oauth2Configuration,
                                 withBaseURL: self.validatedServerURL,
                                    authCode: self.authCodeReceived ,
                                   userAgent: UtilsUrls.getUserAgent(),
                              withCompletion: { (userCredDto: OCCredentialsDto?, error: Error?) in
-                                
+
                                 if let userCredentials = userCredDto {
                                     self.userNewCredentials = (userCredentials.copy() as? OCCredentialsDto)!
                                     self.detectUserDataAndValidate(serverPath: self.validatedServerURL)
-                                    
+
                                  } else {
-                                    
+
                                     self.showURLError(
                                         self.manageNetworkErrors.returnErrorMessage(withHttpStatusCode: -1, andError: error)
                                     )
                                  }
-                                    
+
                 })
             } else if let error = webVC.error {
                 self.showURLError(
@@ -845,9 +845,9 @@ public enum TextfieldType: String {
             }
         }
     }
-    
+
     @IBAction func revealPasswordButtonTapped(_ sender: UIButton) {
-        
+
         if self.textFieldPassword.isSecureTextEntry {
             self.textFieldPassword.isSecureTextEntry = false
             self.revealPasswordButton.setBackgroundImage(UIImage(named: "NonRevealPasswordIcon.png"), for: .normal)
@@ -856,48 +856,48 @@ public enum TextfieldType: String {
             self.revealPasswordButton.setBackgroundImage(UIImage(named: "RevealPasswordIcon.png"), for: .normal)
         }
     }
-    
+
     @IBAction func editingChanged(_ sender: UITextField) {
-        
+
         if self.textFieldUsername.text != ""{
             self.setConnectButton(status: !(sender.text!).isEmpty)
         }
     }
-    
+
 // MARK: segue
     override public func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        
+
         if(segue.identifier == K.segueId.segueToWebLoginView) {
-            
+
             let destinationNavigationController = segue.destination as! UINavigationController
             let targetController = destinationNavigationController.topViewController as! WebLoginViewController
             targetController.serverPath = self.validatedServerURL
         }
     }
-    
-    
+
+
 // MARK: 'private' methods
-    
+
     func detectUserDataAndValidate(serverPath: String) {
-        
+
         if loginMode != .create {
             //credentials may have changed, remove and update cookies
             UtilsCookies.updateOfActiveUserInDB()
         }
-        
+
         DetectUserData .getUserDisplayName(ofServer: serverPath, credentials: self.userNewCredentials) { (serverUserID, displayName, error) in
-            
+
             if (serverUserID != nil && displayName != nil) {
-                
+
                 if self.userNewCredentials.authenticationMethod == .SAML_WEB_SSO {
                     if self.userNewCredentials.userName == nil {
                         self.userNewCredentials.userName = serverUserID
                         self.userNewCredentials.userDisplayName = displayName
-                    } 
+                    }
                 } else {
 
                     if (serverUserID == self.userNewCredentials.userName) {
-                        
+
                         if (displayName != self.userNewCredentials.userDisplayName){
                             self.userNewCredentials.userDisplayName = displayName
                         }
@@ -907,33 +907,33 @@ public enum TextfieldType: String {
             self.validateCredentialsAndStoreAccount()
         }
     }
-    
+
     func validateCredentialsAndStoreAccount() {
         //get list of files in root to check session validty, if ok store new account
         let urlToGetRootFiles = NSURL (string: UtilsUrls.getFullRemoteServerPathWithWebDav(byNormalizedUrl: validatedServerURL) )
-        
+
         DetectListOfFiles().getListOfFiles(url: urlToGetRootFiles!, credentials: self.userNewCredentials,
            withCompletion: { (_ errorHttp: NSInteger?,_ error: NSError?, _ listOfFileDtos: [FileDto]? ) in
-            
+
             self.setNetworkActivityIndicator(status: false)
             let app: AppDelegate = (UIApplication.shared.delegate as! AppDelegate)
-            
+
             if (listOfFileDtos != nil && !((listOfFileDtos?.isEmpty)!)) {
                 print("credentials allowed access to root folder: well done!")
-                
+
                 let tryingToUpdateDifferentUser = (self.user != nil &&
                     (self.loginMode == .update || self.loginMode == .expire)
                     && self.user?.username != nil
                     && self.user?.username != ""
                     && self.userNewCredentials.userName != self.user?.username)
-                
+
                 if (tryingToUpdateDifferentUser) {
                     //Delete current wrong cookies
                     UtilsFramework.deleteAllCookies()
                     self.showCredentialsError(NSLocalizedString("credentials_different_user", comment: "") )
-                    
+
                 } else {
-                    
+
                     switch self.loginMode! {
                         case .create:
                             self.user = UserDto()
@@ -946,58 +946,58 @@ public enum TextfieldType: String {
                         default:
                             break
                     }
-                    
+
                     self.user!.predefinedUrl = k_default_url_server
                     self.userNewCredentials.baseURL = UtilsUrls.getFullRemoteServerPath(self.user)
-                    
+
                     if self.forceAccountMigration {
                         self.userNewCredentials.userId = String(self.user!.userId)
                         OCKeychain.storeCredentials(self.userNewCredentials)
                     }
 
                     if self.loginMode == .create {
-                        
+
                         if (ManageUsersDB.isExistUser(self.user)) {
                             //Delete current wrong cookies and relaunch check url to get correct ones
                             UtilsFramework.deleteAllCookies()
                             self.showURLError(NSLocalizedString("account_not_new", comment: ""))
-                            
+
                         } else {
 
                             self.user = ManageAccounts().storeAccountOfUser(self.user!, withCredentials: self.userNewCredentials)
-                            
+
                             if self.user != nil {
                                 ManageFiles().storeListOfFiles(listOfFileDtos!, forFileId: 0, andUser: self.user!)
-                            
+
                                 app.switchActiveUser(to: self.user, isNewAccount: true)
                                 app.generateAppInterface(fromLoginScreen: true)
-                                
+
                             } else {
                                 self.showURLError(NSLocalizedString("error_could_not_add_account", comment: ""))
                             }
                         }
-                        
+
                      } else {
-                        
+
                         self.user?.credDto = (self.userNewCredentials.copy() as? OCCredentialsDto)!
-                        
+
                         if ( (self.user?.username == nil || self.user?.username == "")
                             && self.userNewCredentials.userName != nil ){
                             self.user?.username = self.userNewCredentials.userName
                         }
-                        
+
                         //update active user
                         if (app.activeUser != nil && app.activeUser.userId == self.user?.userId) {
                             app.activeUser = self.user;
                         }
-                        
+
                         //update account
                         if self.loginMode == .migrate || self.forceAccountMigration {
                              ManageAccounts().migrateAccountOfUser(self.user!, withCredentials: self.userNewCredentials)
-                            
+
                             // migration mode needs to start a fresh list of files, so that it is updated with the new URL
                             app.generateAppInterface(fromLoginScreen: true)
-                              
+
                         } else {
                             ManageAccounts().updateAccountOfUser(self.user!, withCredentials: self.userNewCredentials)
 
@@ -1013,7 +1013,7 @@ public enum TextfieldType: String {
                             withHttpStatusCode: (errorHttp)!, andError: nil
                         )
                     )
-                    
+
                 } else {
                     self.showURLError(
                         self.manageNetworkErrors.returnErrorMessage(
@@ -1022,28 +1022,28 @@ public enum TextfieldType: String {
                     )
                 }
             }
-            
+
         })
-        
+
     }
-    
+
     override public func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-    
+
     @objc func setLoginMode(loginMode: LoginMode, user: UserDto) {
         self.loginMode = loginMode
         self.user = user
     }
-    
-    
+
+
     func setPropertiesOfGlobalUser(url: String, username: String, urlServerRedirected: String?) {
-       
+
         self.user!.url = url
         self.user!.username = username
         self.user!.ssl = url.hasPrefix(K.constant.httpsPrefix)
         self.user!.urlRedirected = urlServerRedirected
     }
-    
+
 }
